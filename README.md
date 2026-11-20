@@ -21,3 +21,13 @@ python3 -m http.server 8765
 - `assets/css/style.css` 日本語向けに本文17px・行間1.9・字間0.04em
 - `assets/js/main.js` 実行ログのデモ、数字のカウントアップ、会社案内のスライド表示
 - `assets/doc/if-juku-company-profile.pdf` 会社案内（10ページ）
+
+## セキュリティの決まり（2026-11-20）
+
+- `vercel.json` で CSP などのヘッダーを付けている（Vercel の本番だけに効く。GitHub Pages には付かない）
+  - 外から読んでよいのは Google Fonts・cdnjs（Font Awesome）・jsDelivr（BudouX）だけ。ほかの CDN や外部の画像・動画を足すときは CSP にも足す
+  - `index.html` と `home.html` の `<head>` にある短い `<script>` は、CSP にハッシュで登録している。**中身を 1 文字でも変えたら、ハッシュを計算し直して `vercel.json` を書き換える**（変えないと、その script が動かなくなる）
+    `python3 -c 'import re,sys,hashlib,base64;[print("sha256-"+base64.b64encode(hashlib.sha256(m.encode()).digest()).decode()) for m in re.findall(r"<script>(.*?)</script>",open(sys.argv[1]).read(),re.S)]' index.html`
+  - 新しい script は、埋め込みにせず `assets/js/` のファイルにする
+- `api/chat.js`・`api/lead.js` は、自分のサイトの画面からの POST だけを受け付け、同じ IP からの回数を制限する（`api/_guard.js`）。制限はインスタンスごとの目安なので、確実に止めるには Vercel の Firewall のレート制限も使う
+- 公開のワークフローは、Actions をコミットの SHA、Vercel CLI を版の番号で固定している。上げるときは `.github/workflows/vercel.yml` を書き換える
